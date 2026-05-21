@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM / Workflow / Agent — 概念互动卡片 & Quiz</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #232637;
+      --accent: #6c63ff;
+      --accent2: #ff6584;
+      --accent3: #43c6ac;
+      --text: #e8eaf6;
+      --muted: #8892b0;
+      --border: #2d3148;
+      --correct: #43c6ac;
+      --wrong: #ff6584;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 860px; margin: 0 auto; }
+
+    /* ─── Header ─── */
+    header { text-align: center; margin-bottom: 3rem; }
+    header h1 {
+      font-size: 2.2rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: .5rem;
+    }
+    header p { color: var(--muted); font-size: .95rem; }
+
+    /* ─── Tab nav ─── */
+    .tabs {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1rem;
+      padding: .6rem 1.4rem;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color .2s, border-color .2s;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── Concept Cards ─── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.4rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.6rem;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+      overflow: hidden;
+      perspective: 600px;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(108,99,255,.25); }
+
+    .card-inner {
+      transition: transform .5s;
+      transform-style: preserve-3d;
+      position: relative;
+      min-height: 180px;
+    }
+    .card.flipped .card-inner { transform: rotateY(180deg); }
+
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      position: absolute;
+      width: 100%;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+      top: 0;
+    }
+    .card-front { position: relative; }
+
+    .card-icon {
+      font-size: 2.4rem;
+      margin-bottom: .8rem;
+      display: block;
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: .5rem;
+      background: linear-gradient(90deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .card-subtitle { color: var(--muted); font-size: .82rem; margin-bottom: .9rem; }
+    .card-desc { color: var(--text); font-size: .9rem; line-height: 1.55; }
+    .card-back .card-desc {
+      color: var(--text);
+      font-size: .88rem;
+      line-height: 1.6;
+      padding-top: .3rem;
+    }
+    .card-hint {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-block;
+      background: rgba(108,99,255,.18);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: .18rem .7rem;
+      font-size: .75rem;
+      margin-bottom: .7rem;
+    }
+
+    /* ─── Flowchart ─── */
+    .flow-section { margin-top: 1rem; }
+    .flow-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--accent3);
+      margin-bottom: 1rem;
+    }
+    .flow-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 1.6rem;
+    }
+    .flow-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .65rem 1.1rem;
+      font-size: .88rem;
+      text-align: center;
+      min-width: 110px;
+    }
+    .flow-box.highlight { border-color: var(--accent); color: var(--accent); }
+    .flow-box.highlight2 { border-color: var(--accent3); color: var(--accent3); }
+    .flow-arrow { color: var(--muted); font-size: 1.3rem; }
+    .flow-note { color: var(--muted); font-size: .82rem; margin-top: .3rem; }
+
+    /* ─── Comparison Table ─── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      font-size: .9rem;
+    }
+    .compare-table th {
+      background: var(--surface2);
+      color: var(--accent);
+      padding: .8rem 1rem;
+      text-align: left;
+      font-weight: 600;
+    }
+    .compare-table td {
+      padding: .75rem 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      vertical-align: top;
+    }
+    .compare-table tr:hover td { background: rgba(108,99,255,.06); color: var(--text); }
+
+    /* ─── Quiz ─── */
+    .quiz-progress {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent3));
+      border-radius: 4px;
+      transition: width .4s ease;
+    }
+    .progress-label { color: var(--muted); font-size: .85rem; white-space: nowrap; }
+
+    .question-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      margin-bottom: 1.4rem;
+    }
+    .question-num {
+      font-size: .78rem;
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: .6rem;
+    }
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.5;
+      margin-bottom: 1.4rem;
+    }
+
+    .options { display: flex; flex-direction: column; gap: .65rem; }
+    .option-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: .85rem 1.2rem;
+      text-align: left;
+      cursor: pointer;
+      font-size: .9rem;
+      transition: all .18s;
+      position: relative;
+    }
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(108,99,255,.1);
+    }
+    .option-btn.correct {
+      border-color: var(--correct);
+      background: rgba(67,198,172,.12);
+      color: var(--correct);
+    }
+    .option-btn.wrong {
+      border-color: var(--wrong);
+      background: rgba(255,101,132,.12);
+      color: var(--wrong);
+    }
+    .option-btn:disabled { cursor: not-allowed; }
+
+    .explanation {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(108,99,255,.08);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      font-size: .88rem;
+      color: var(--muted);
+      line-height: 1.55;
+      display: none;
+    }
+    .explanation.visible { display: block; }
+
+    .quiz-nav {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 1rem;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: .65rem 1.5rem;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn.secondary {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    /* ─── Result Screen ─── */
+    .result-screen {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+    }
+    .result-score {
+      font-size: 4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 1rem 0 .5rem;
+    }
+    .result-msg { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
+    .result-breakdown {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .breakdown-item {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .breakdown-item .bi-num {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent3);
+    }
+    .breakdown-item .bi-label { font-size: .78rem; color: var(--muted); }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🤖 LLM · Workflow · Agent</h1>
+    <p>Week 1 核心概念 — 交互卡片 + 知识测验</p>
+  </header>
+
+  <!-- Tab nav -->
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('cards')">📇 概念卡片</button>
+    <button class="tab-btn" onclick="switchTab('flow')">🔀 流程图</button>
+    <button class="tab-btn" onclick="switchTab('compare')">📊 对比表</button>
+    <button class="tab-btn" onclick="switchTab('quiz')">🧠 Quiz</button>
+  </nav>
+
+  <!-- ── Tab: Cards ── -->
+  <div id="tab-cards" class="tab-panel active">
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:1.4rem;">👆 点击卡片翻转，查看更多细节</p>
+    <div class="cards-grid">
+
+      <!-- LLM -->
+      <div class="card" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+            <span class="tag">基础模型</span>
+            <span class="card-icon">🧠</span>
+            <div class="card-title">LLM</div>
+            <div class="card-subtitle">Large Language Model</div>
+            <div class="card-desc">通过海量文本预训练的概率模型，能够理解并生成人类语言，是一切 AI 应用的"大脑"基础。</div>
+          </div>
+          <div class="card-back">
+            <span class="tag">关键原理</span>
+            <div class="card-title">LLM 核心</div>
+            <div class="card-desc">
+              📌 <strong>Next-token prediction</strong>：每次预测下一个最可能的词<br><br>
+              📌 <strong>Transformer 架构</strong>：自注意力机制捕捉长距离依赖<br><br>
+              📌 <strong>Temperature</strong>：控制输出随机性（0=确定，>1=创意）<br><br>
+              📌 <strong>Context window</strong>：模型一次能"看到"的最大 token 数量
+            </div>
+          </div>
+        </div>
+        <span class="card-hint">点击翻转 →</span>
+      </div>
+
+      <!-- Workflow -->
+      <div class="card" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+            <span class="tag">编排层</span>
+            <span class="card-icon">🔀</span>
+            <div class="card-title">Workflow</div>
+            <div class="card-subtitle">确定性流程编排</div>
+            <div class="card-desc">将多个 LLM 调用或工具调用以固定顺序串联，执行路径由人类预先设计，可复现、可调试。</div>
+          </div>
+          <div class="card-back">
+            <span class="tag">典型模式</span>
+            <div class="card-title">Workflow 模式</div>
+            <div class="card-desc">
+              🔗 <strong>Chain</strong>：依次调用，上一步输出是下一步输入<br><br>
+              🔀 <strong>Router</strong>：根据分类结果走不同分支<br><br>
+              ⚡ <strong>Parallel</strong>：多任务并发执行，最后汇总<br><br>
+              📋 <strong>Evaluator-optimizer</strong>：循环生成+评分直到达标
+            </div>
+          </div>
+        </div>
+        <span class="card-hint">点击翻转 →</span>
+      </div>
+
+      <!-- Agent -->
+      <div class="card" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+            <span class="tag">自主系统</span>
+            <span class="card-icon">🤖</span>
+            <div class="card-title">Agent</div>
+            <div class="card-subtitle">自主决策 + 工具调用</div>
+            <div class="card-desc">LLM 作为"大脑"自主规划下一步行动，动态决定调用哪些工具、何时停止，循环直到目标达成。</div>
+          </div>
+          <div class="card-back">
+            <span class="tag">核心循环</span>
+            <div class="card-title">Agent Loop</div>
+            <div class="card-desc">
+              1️⃣ <strong>感知</strong>：接收环境状态与用户输入<br><br>
+              2️⃣ <strong>思考</strong>：LLM 推理并选择下一步行动<br><br>
+              3️⃣ <strong>行动</strong>：调用工具（搜索/代码/API）<br><br>
+              4️⃣ <strong>观察</strong>：获取工具结果，更新上下文<br><br>
+              🔁 重复直到任务完成或达到最大步骤
+            </div>
+          </div>
+        </div>
+        <span class="card-hint">点击翻转 →</span>
+      </div>
+
+      <!-- Tool Use -->
+      <div class="card" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+            <span class="tag">能力扩展</span>
+            <span class="card-icon">🔧</span>
+            <div class="card-title">Tool Use</div>
+            <div class="card-subtitle">工具调用 / Function Calling</div>
+            <div class="card-desc">LLM 生成结构化的函数调用请求，由外部系统执行，结果返回给 LLM 继续推理，突破纯文本限制。</div>
+          </div>
+          <div class="card-back">
+            <span class="tag">常见工具类型</span>
+            <div class="card-title">工具分类</div>
+            <div class="card-desc">
+              🔍 <strong>信息检索</strong>：Web搜索、数据库查询、RAG<br><br>
+              💻 <strong>代码执行</strong>：Python REPL、Shell、沙箱<br><br>
+              🌐 <strong>外部服务</strong>：API调用、邮件、日历<br><br>
+              💾 <strong>持久化</strong>：读写文件、记忆存储
+            </div>
+          </div>
+        </div>
+        <span class="card-hint">点击翻转 →</span>
+      </div>
+
+      <!-- Memory -->
+      <div class="card" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+            <span class="tag">状态管理</span>
+            <span class="card-icon">💾</span>
+            <div class="card-title">Memory</div>
+            <div class="card-subtitle">上下文与记忆系统</div>
+            <div class="card-desc">Agent 如何在短期（对话）和长期（跨会话）维持状态信息，直接影响任务的连贯性与一致性。</div>
+          </div>
+          <div class="card-back">
+            <span class="tag">四种记忆类型</span>
+            <div class="card-title">记忆分层</div>
+            <div class="card-desc">
+              🗂 <strong>In-context</strong>：当前窗口内的对话历史<br><br>
+              📚 <strong>External DB</strong>：向量库/KV存储，跨会话持久<br><br>
+              📝 <strong>Summarization</strong>：对长历史压缩摘要<br><br>
+              🏋️ <strong>Fine-tuning</strong>：将记忆"烧录"进模型权重
+            </div>
+          </div>
+        </div>
+        <span class="card-hint">点击翻转 →</span>
+      </div>
+
+      <!-- Prompt -->
+      <div class="card" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+            <span class="tag">接口层</span>
+            <span class="card-icon">💬</span>
+            <div class="card-title">Prompt</div>
+            <div class="card-subtitle">提示词工程</div>
+            <div class="card-desc">与 LLM 沟通的语言界面，包括 System Prompt 设定角色、User/Assistant 多轮对话，以及少样本示例。</div>
+          </div>
+          <div class="card-back">
+            <span class="tag">高级技术</span>
+            <div class="card-title">Prompting 技巧</div>
+            <div class="card-desc">
+              🧩 <strong>CoT</strong>：让模型逐步思考，提升推理<br><br>
+              🎭 <strong>Few-shot</strong>：给出示例让模型类比<br><br>
+              🔢 <strong>ReAct</strong>：交替输出 Thought/Action/Obs<br><br>
+              🌳 <strong>ToT</strong>：树状搜索多条推理路径
+            </div>
+          </div>
+        </div>
+        <span class="card-hint">点击翻转 →</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Tab: Flow ── -->
+  <div id="tab-flow" class="tab-panel">
+    <div class="flow-section">
+
+      <div class="flow-title">① LLM 基本调用流程</div>
+      <div class="flow-row">
+        <div class="flow-box">用户输入</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight">Prompt 构建</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">LLM API</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight2">生成回复</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">返回用户</div>
+      </div>
+      <p class="flow-note">最简单的单次调用，无状态，无工具</p>
+
+      <div class="flow-title" style="margin-top:2rem">② Workflow 链式编排</div>
+      <div class="flow-row">
+        <div class="flow-box">原始需求</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight">LLM 分析</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight">LLM 生成</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight">LLM 校验</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight2">最终输出</div>
+      </div>
+      <p class="flow-note">多步骤，路径固定，每步专注单一任务</p>
+
+      <div class="flow-title" style="margin-top:2rem">③ Agent 自主循环 (ReAct Loop)</div>
+      <div class="flow-row" style="flex-wrap:wrap">
+        <div class="flow-box">任务输入</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight">LLM 推理<br><small>Thought</small></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">选择工具<br><small>Action</small></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">执行工具<br><small>Tool Call</small></div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box highlight2">获得结果<br><small>Observation</small></div>
+        <span class="flow-arrow">↩</span>
+      </div>
+      <div class="flow-row" style="margin-top:.5rem">
+        <div class="flow-box highlight2">任务完成？</div>
+        <span class="flow-arrow">是 →</span>
+        <div class="flow-box">返回答案</div>
+        <span style="color:var(--muted);margin-left:1rem">否 → 回到 LLM 推理</span>
+      </div>
+      <p class="flow-note">动态路径，LLM 自主决策，支持多工具组合</p>
+
+      <div class="flow-title" style="margin-top:2rem">④ 三者关系总览</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.4rem;font-size:.9rem;line-height:2">
+        <div>🧠 <strong style="color:var(--accent)">LLM</strong> — 语言能力底层，提供理解与生成</div>
+        <div style="padding-left:2rem;color:var(--muted)">↓ 封装 &amp; 编排</div>
+        <div>🔀 <strong style="color:var(--accent3)">Workflow</strong> — 固定流程，确定性高，适合生产稳定任务</div>
+        <div style="padding-left:2rem;color:var(--muted)">↓ 赋予自主决策</div>
+        <div>🤖 <strong style="color:var(--accent2)">Agent</strong> — 动态规划 + 工具调用，适合复杂开放任务</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tab: Compare ── -->
+  <div id="tab-compare" class="tab-panel">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>维度</th>
+          <th>🧠 LLM</th>
+          <th>🔀 Workflow</th>
+          <th>🤖 Agent</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>决策方式</strong></td>
+          <td>Token 概率预测</td>
+          <td>人工预定路径</td>
+          <td>LLM 自主规划</td>
+        </tr>
+        <tr>
+          <td><strong>可控性</strong></td>
+          <td>中（受 prompt 影响）</td>
+          <td>高（确定性）</td>
+          <td>低（动态路径）</td>
+        </tr>
+        <tr>
+          <td><strong>适用场景</strong></td>
+          <td>文本生成/理解</td>
+          <td>结构化、可重复任务</td>
+          <td>开放式、多步骤任务</td>
+        </tr>
+        <tr>
+          <td><strong>调试难度</strong></td>
+          <td>难（黑盒）</td>
+          <td>易（流程清晰）</td>
+          <td>难（路径不可预测）</td>
+        </tr>
+        <tr>
+          <td><strong>工具使用</strong></td>
+          <td>否</td>
+          <td>可选（固定）</td>
+          <td>是（动态选择）</td>
+        </tr>
+        <tr>
+          <td><strong>延迟 / 成本</strong></td>
+          <td>低</td>
+          <td>中（多步）</td>
+          <td>高（多轮循环）</td>
+        </tr>
+        <tr>
+          <td><strong>失败风险</strong></td>
+          <td>幻觉输出</td>
+          <td>单点失败即中断</td>
+          <td>错误累积放大</td>
+        </tr>
+        <tr>
+          <td><strong>典型框架</strong></td>
+          <td>OpenAI API / Claude API</td>
+          <td>LangChain Chain / Prefect</td>
+          <td>LangGraph / AutoGPT / Claude Agent SDK</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Tab: Quiz ── -->
+  <div id="tab-quiz" class="tab-panel">
+    <div id="quiz-container">
+      <div class="quiz-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <span class="progress-label" id="progress-label">0 / 8</span>
+      </div>
+
+      <div id="quiz-questions"></div>
+
+      <div class="quiz-nav">
+        <button class="btn" id="next-btn" onclick="nextQuestion()" disabled>下一题 →</button>
+      </div>
+    </div>
+
+    <div id="result-container" class="hidden">
+      <div class="result-screen">
+        <div>🎉</div>
+        <div class="result-score" id="result-score"></div>
+        <div class="result-msg" id="result-msg"></div>
+        <div class="result-breakdown">
+          <div class="breakdown-item">
+            <div class="bi-num" id="r-correct"></div>
+            <div class="bi-label">答对</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="bi-num" id="r-wrong"></div>
+            <div class="bi-label">答错</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="bi-num" id="r-total"></div>
+            <div class="bi-label">总题数</div>
+          </div>
+        </div>
+        <button class="btn" onclick="restartQuiz()">🔄 重新挑战</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Tab switching ───────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const names = ['cards','flow','compare','quiz'];
+    b.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'quiz' && quizState.current === 0 && !quizState.started) startQuiz();
+}
+
+// ─── Quiz data ───────────────────────────────────────
+const questions = [
+  {
+    q: "LLM 在生成文本时，本质上是在做什么？",
+    opts: [
+      "在数据库中检索最相关的句子",
+      "预测下一个最可能出现的 token",
+      "从记忆库中复制已有的回答",
+      "执行确定性的规则引擎匹配"
+    ],
+    ans: 1,
+    explain: "LLM 的核心机制是 next-token prediction：给定上下文，预测下一个 token 的概率分布，并从中采样。这个过程是概率性的，不是检索或规则匹配。"
+  },
+  {
+    q: "以下哪个描述最准确地区分了 Workflow 和 Agent？",
+    opts: [
+      "Workflow 使用 GPT-4，Agent 使用更小的模型",
+      "Workflow 执行路径由人类预先设计；Agent 由 LLM 动态决定下一步行动",
+      "Workflow 可以调用工具，Agent 不可以",
+      "它们本质上是同一概念，只是叫法不同"
+    ],
+    ans: 1,
+    explain: "核心区别在于决策权：Workflow 的执行路径是确定性的（人设计）；Agent 的路径由 LLM 在运行时动态规划，这带来了更大的灵活性，但也引入了不可预测性。"
+  },
+  {
+    q: "Temperature 参数设为 0 时，LLM 的输出会怎样？",
+    opts: [
+      "输出变得更有创意和多样",
+      "模型拒绝回答",
+      "输出变为确定性的（每次相同）",
+      "输出速度变快"
+    ],
+    ans: 2,
+    explain: "Temperature=0 时，模型每次都选择概率最高的 token，输出趋向确定性。Temperature 越高，采样越随机，输出越多样。"
+  },
+  {
+    q: "Agent 的 ReAct 框架中，三个交替步骤是什么？",
+    opts: [
+      "Read → Analyze → Complete",
+      "Receive → Act → Check",
+      "Thought → Action → Observation",
+      "Plan → Execute → Review"
+    ],
+    ans: 2,
+    explain: "ReAct = Reasoning + Acting。循环：Thought（LLM推理当前状态）→ Action（选择并调用工具）→ Observation（获取工具执行结果）→ 回到 Thought，直到任务完成。"
+  },
+  {
+    q: "在 Agent 系统中，'工具调用（Tool Use）'的主要作用是什么？",
+    opts: [
+      "减少 LLM 的计算成本",
+      "让 LLM 突破纯文本限制，与外部系统交互",
+      "替代 Prompt 的作用",
+      "确保 LLM 输出格式统一"
+    ],
+    ans: 1,
+    explain: "LLM 本身只能处理文本，Tool Use 让 LLM 能够调用搜索引擎、代码执行器、数据库、外部 API 等，大幅扩展了 Agent 的实际能力边界。"
+  },
+  {
+    q: "以下哪种场景最适合使用 Workflow 而非 Agent？",
+    opts: [
+      "让 AI 自主完成一个复杂的研究报告，需要动态决定搜索哪些信息",
+      "每天定时抓取新闻，翻译后发送邮件（固定步骤）",
+      "让 AI 自主规划并执行一个软件项目",
+      "与用户进行开放式多轮对话"
+    ],
+    ans: 1,
+    explain: "Workflow 适合可重复、步骤固定的任务，比如「抓取→翻译→发送」。如果步骤确定且不需要动态判断，Workflow 更可靠、成本更低。"
+  },
+  {
+    q: "LLM 的 'Context Window' 指的是什么？",
+    opts: [
+      "LLM 的训练数据大小",
+      "用户界面的窗口尺寸",
+      "模型一次推理能处理的最大 token 数量",
+      "API 调用的最大并发数"
+    ],
+    ans: 2,
+    explain: "Context Window 是模型一次能'看到'的最大 token 数（包括输入+输出）。例如 Claude 支持 200K token。超出窗口的内容模型无法直接访问，需要压缩或外部记忆处理。"
+  },
+  {
+    q: "Agent 系统中，错误积累（error compounding）问题最容易发生在什么时候？",
+    opts: [
+      "单次 LLM 调用时",
+      "使用 Temperature=0 时",
+      "多步骤循环中，前一步的错误被后续步骤放大",
+      "Workflow 执行过程中"
+    ],
+    ans: 2,
+    explain: "Agent 在多步骤循环中，每一步都依赖上一步的输出。如果某步出现轻微错误，后续步骤会基于错误输出继续推理，导致错误不断放大，最终偏离目标。这是 Agent 系统的主要风险之一。"
+  }
+];
+
+// ─── Quiz state ───────────────────────────────────────
+const quizState = { current: 0, score: 0, answered: false, started: false };
+
+function startQuiz() {
+  quizState.current = 0;
+  quizState.score = 0;
+  quizState.started = true;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[quizState.current];
+  const pct = (quizState.current / questions.length) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = quizState.current + ' / ' + questions.length;
+
+  quizState.answered = false;
+  document.getElementById('next-btn').disabled = true;
+
+  const container = document.getElementById('quiz-questions');
+  container.innerHTML = `
+    <div class="question-card">
+      <div class="question-num">第 ${quizState.current + 1} 题 / 共 ${questions.length} 题</div>
+      <div class="question-text">${q.q}</div>
+      <div class="options">
+        ${q.opts.map((opt, i) => `
+          <button class="option-btn" id="opt-${i}" onclick="selectAnswer(${i})">
+            <span style="color:var(--accent);font-weight:600;margin-right:.5rem">${['A','B','C','D'][i]}.</span>${opt}
+          </button>
+        `).join('')}
+      </div>
+      <div class="explanation" id="explanation">${q.explain}</div>
+    </div>
+  `;
+}
+
+function selectAnswer(idx) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+
+  const q = questions[quizState.current];
+  const correct = q.ans;
+
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === correct) btn.classList.add('correct');
+    else if (i === idx && idx !== correct) btn.classList.add('wrong');
+  });
+
+  if (idx === correct) quizState.score++;
+
+  document.getElementById('explanation').classList.add('visible');
+  document.getElementById('next-btn').disabled = false;
+  document.getElementById('next-btn').textContent =
+    quizState.current + 1 >= questions.length ? '查看结果 🎉' : '下一题 →';
+}
+
+function nextQuestion() {
+  quizState.current++;
+  if (quizState.current >= questions.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz-container').classList.add('hidden');
+  document.getElementById('result-container').classList.remove('hidden');
+
+  const total = questions.length;
+  const score = quizState.score;
+  const pct = Math.round((score / total) * 100);
+
+  document.getElementById('result-score').textContent = pct + '%';
+  document.getElementById('r-correct').textContent = score;
+  document.getElementById('r-wrong').textContent = total - score;
+  document.getElementById('r-total').textContent = total;
+
+  const msgs = [
+    [0, 40, '继续加油！建议回看概念卡片 📇'],
+    [40, 70, '不错的开始！有些概念值得再深挖 🔍'],
+    [70, 90, '掌握得相当好！只差临门一脚 💪'],
+    [90, 101, '优秀！Week 1 概念已完全掌握 🚀'],
+  ];
+  const msg = msgs.find(([lo, hi]) => pct >= lo && pct < hi);
+  document.getElementById('result-msg').textContent = msg[2];
+
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('progress-label').textContent = total + ' / ' + total;
+}
+
+function restartQuiz() {
+  document.getElementById('quiz-container').classList.remove('hidden');
+  document.getElementById('result-container').classList.add('hidden');
+  document.getElementById('next-btn').textContent = '下一题 →';
+  startQuiz();
+}
+
+// Initialize
+renderQuestion();
+quizState.started = true;
+</script>
+</body>
+</html>
