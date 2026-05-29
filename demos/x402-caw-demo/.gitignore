@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Runtime demo state. The app creates defaults on first run.
+data/*.json
